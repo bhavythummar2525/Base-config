@@ -1,0 +1,32 @@
+using CRUD.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using System.Reflection.Emit;
+
+namespace CRUD.Configration
+{
+    public class UserConfigration : IEntityTypeConfiguration<UserModel> // UserConfigration.cs this is file name
+    {
+        public void Configure(EntityTypeBuilder<UserModel> builder)
+        {
+    
+
+            builder.HasKey(a => a.Id);
+            builder.Property(a => a.Name).IsRequired();
+            builder.Property(a => a.Number).IsRequired().HasMaxLength(11);
+            builder.Property(a => a.Email).IsRequired();
+
+            builder.HasOne(pc => pc.City) //  public  CityModel City { get; set; } in user model
+               .WithMany(b => b.Users)  //  public List<UserModel> Users { get; set; } in city model
+               .HasForeignKey(pc => pc.CityIDFK)  // public int CityIDFK { get; set; } in user model
+               .OnDelete(DeleteBehavior.NoAction);
+
+        }
+    }
+}
+
+
+//  table 1. city - primary key 👇
+	  2. user - give the foreign key
+
+

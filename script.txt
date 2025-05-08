@@ -1,0 +1,117 @@
+@* <script>
+    $(document).ready(function () {
+        $("#btnlogout").click(function () {
+            var confirmLogout = confirm("Are you sure you want to logout?");
+
+            if (confirmLogout) {
+                // Destroy "AuthToken" cookie
+                document.cookie = "AuthToken=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+
+                // Destroy "SiteId" cookie
+                document.cookie = "SiteId=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+
+                window.location.href = '@Url.Action("Index", "User")';
+            }
+        });
+    });
+</script> *@
+
+@* <script>
+    $('#btnlogout').submit(function (e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: "@Url.Action("Logout", "User")",
+            type: 'POST',
+            contentType: 'application/json',
+            success: function (response) {
+                window.location.href = '@Url.Action("Index", "User")';
+            },
+            error: function () {
+                alert('Logout failed');
+            }
+        });
+    });
+</script> *@
+
+
+
+<script>
+    $(document).ready(function () {
+
+        function toSlug(text) {
+            return text.replace(/[^a-zA-Z0-9\s]/g, '').toLowerCase().replace(/\s+/g, '-');
+        }
+
+        $("#DocumentName").on('input', function () {
+            var documentName = $(this).val();
+            $("#DocumentSlug").val(toSlug(documentName));
+        });
+
+        $(document).undelegate('#btnsave', "click").delegate("#btnsave", "click", function (e) {
+
+            e.preventDefault();
+            var isformvalid = true;
+
+            var Document = $("#Document").val();
+            if (Document.length == 0) {
+                alert("Please select an File");
+                isformvalid = false;
+                return false;
+            }
+
+            $('#documentfrm').each(function () {
+                if (!isCreateDocumentFormValid($(this))) {
+                    isformvalid = false;
+                }
+            });
+            if (!isformvalid) {
+                return false;
+            }
+
+            if (isformvalid) {
+
+                var formdata = new FormData($('#documentfrm')[0]);
+                formdata.append($(this).attr("name"), $(this).attr("name"));
+
+                $.ajax({
+                    method: "POST",
+                    url: "@Url.Action("CreateDocument", "Document")",
+                    processData: false,
+                    contentType: false,
+                    data: formdata,
+                    success: function (response) {
+                        if (response.result == "Success") {
+                            alert(response.value);
+                            window.location.href = "/Document/Index";
+                        }
+                        else {
+                            alert(response.value);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        var errorMessage = xhr.responseText;
+                        alert(errorMessage);
+                    }
+                });
+            }
+        });
+    });
+    function isCreateDocumentFormValid(formname) {
+        $.validator.unobtrusive.parse(formname);
+        var isvalidate = $(formname).validate().form();
+        if (isvalidate) {
+            return true;
+        }
+        return false;
+    }
+</script>
+
+
+
+
+formData.append('FileInfo', "@Model.Photo");
+
+ var formdata = new FormData($('#documentfrm')[0]);
+                formdata.append($(this).attr("name"), $(this).attr("name"));
+                formdata.append('DocumentSlug', $('#DocumentSlug').val());

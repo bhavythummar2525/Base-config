@@ -1,0 +1,176 @@
+using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
+using Project_STSBackend.Data.Repositories;
+using Project_STSBackend.Data.Repositories.Interfaces;
+using Project_STSBackend.Helper.Model;
+using Project_STSBackend.Helper.ViewModel;
+
+namespace Project_STSBackend.Controllers
+{
+    public class BlockController : Controller
+    {
+        private readonly IBlockRepository _blockRepository;
+        private readonly ITagRepository _tagRepository;
+        private readonly IMapper _mapper;
+        private readonly IUnitOfWork _unitOfWork;
+
+        public BlockController(IBlockRepository blockRepository, ITagRepository tagRepository, IUnitOfWork unitOfWork, IMapper mapper)
+        {
+            _blockRepository = blockRepository;
+            _tagRepository = tagRepository;
+            _mapper = mapper;
+            _unitOfWork = unitOfWork;
+        }
+
+        [HttpGet]
+        public IActionResult Index()
+        {
+            var blocks = _blockRepository.GetAllBlocks();
+            return View(blocks);
+        }
+
+        [HttpGet]
+        public IActionResult CreateBlock()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateBlock([FromBody] BlockViewModel block)
+        {
+
+            var blockview = new BlockModel
+            {
+                BlockName = block.BlockName,
+                BlockSlug = block.BlockSlug,
+                IsPage = block.IsPage,
+                Tags = new List<TagModel>(),
+                CreateDate = DateTime.Now,
+                ModifiedBy = "User",
+                ModifiedDate = DateTime.Now,
+                IsActive = true
+
+            };
+
+            if (block.TagData != null)
+            {
+                foreach (var tagData in block.TagData)
+                {
+                    var tag = new TagModel
+                    {
+                        TagName = tagData.TagName,
+                        TagContent = tagData.TagContent,
+                        Block = blockview,
+                    };
+
+                    blockview.Tags.Add(tag);
+                }
+            }
+
+             _blockRepository.Insert(blockview);
+            await _unitOfWork.CommitAsync();
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public IActionResult EditBlock(int id)
+        {
+            var block = _blockRepository.GetBlockById(id);
+            if (block == null)
+            {
+                return NotFound();
+            }
+
+            if (block.Tags == null)
+            {
+                block.Tags = new List<TagModel>();
+            }
+
+            var blockViewModel = _mapper.Map<BlockViewModel>(block);
+            return View(blockViewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> EditBlock([FromBody] BlockViewModel blockView)
+        {
+
+            if (blockView != null)
+            {
+                var block = new BlockModel
+                {
+                    BlockId = blockView.BlockId,
+                    BlockName = blockView.BlockName,
+                    BlockSlug = blockView.BlockSlug,
+                    IsPage = true,
+                    ModifiedBy = "User1",
+                    ModifiedDate = DateTime.Now,
+                    IsActive = true,
+                    Tags = new List<TagModel>()
+                };
+
+                if (blockView.TagData != null)
+                {
+                    foreach (var tagData in blockView.TagData)
+                    {
+                        if (tagData.TagId != 0)
+                        {
+                            var existingTag = _tagRepository.Get(tagData.TagId);
+                            if (existingTag != null)
+                            {
+                                existingTag.TagName = tagData.TagName;
+                                existingTag.TagContent = tagData.TagContent;
+                                existingTag.BlockId = block.BlockId;
+                                block.Tags.Add(existingTag);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Tag with Id {tagData.TagId} not found.");
+                            }
+                        }
+                        else
+                        {
+                            var newTag = new TagModel
+                            {
+                                TagName = tagData.TagName,
+                                TagContent = tagData.TagContent,
+                                BlockId = block.BlockId
+                            };
+                            block.Tags.Add(newTag);
+                        }
+                    }
+                }
+
+                if (blockView.DeletedTags != null)
+                {
+                    foreach (var tagId in blockView.DeletedTags)
+                    {
+                        var tagToDelete = _tagRepository.Get(tagId);
+                        if (tagToDelete != null)
+                        {
+                            _tagRepository.Delete(tagToDelete);
+                        }
+                    }
+                }
+
+                _blockRepository.Update(block);
+                await _unitOfWork.CommitAsync();
+            }
+            return RedirectToAction("Index");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteBlockById(int id)
+        {
+            try
+            {
+                await _blockRepository.DeleteBloc(id);
+                await _unitOfWork.CommitAsync();
+                return Ok("Success");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while deleting the page content: {ex.Message}");
+            }
+        }
+    }
+}

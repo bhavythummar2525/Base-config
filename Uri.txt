@@ -1,0 +1,4 @@
+Uri.EscapeDataString(primarycontactname.ToString()));  - helper
+
+
+getprimarycontactname = Uri.UnescapeDataString(primarycontactname); - webapi

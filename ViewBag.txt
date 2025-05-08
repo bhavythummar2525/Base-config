@@ -1,0 +1,13 @@
+var CompanyList = _companyMasterService.GetCompanies();
+ var lstcompanytype = new List<SelectListItem>();
+ if (CompanyList != null && CompanyList.Count() > 0)
+ {
+     lstcompanytype = CompanyList.Select(item => new SelectListItem { Text = item.Name, Value = item.Id.ToString() }).ToList();
+ }
+ ViewBag.CompanyList = lstcompanytype;
+
+--------------------------------------------------------------
+
+    <label for="CompanyDropdown">Company</label><span class="asterisk">*</span>
+    @Html.DropDownListFor(m => m.CompanyId,(List<SelectListItem>)ViewBag.CompanyList,"Select",new { htmlAttributes = new { @class = "form-control select2", @id = "CompanyId", @name="CompanyId"} })
+    @Html.ValidationMessageFor(model => model.CompanyId, "", new { @class = "text-danger" })

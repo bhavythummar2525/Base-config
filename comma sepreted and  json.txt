@@ -1,0 +1,23 @@
+public List<DropdownModel> GetSkillById(string skillids)
+{
+    var skill = JsonConvert.DeserializeObject<List<DropdownModel>>(skillids);
+    if (skill != null && skill.Count() > 0)
+    {
+        var skillidList = skill.Select(p => p.Id).ToList();
+
+        //var skillidList = skillids.Split(',').Select(int.Parse).ToList();
+
+        var result = AsNoTracking
+           .Where(pc => skillidList.Contains(pc.SkillMasterId))
+           .Select(s => new DropdownModel
+           {
+               Id = s.SkillMasterId,
+               Name = s.Skill
+           })
+           .OrderBy(o => o.Name)
+           .ToList();
+        return result;
+    }
+
+    return null;
+}

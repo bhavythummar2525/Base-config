@@ -1,0 +1,14 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    //"DefaultConnection": "Server=localhost;Database=STSBackendDB;Trusted_Connection=true;TrustServerCertificate=true"
+    "DefaultConnection": "Server=103.251.216.101;Database=STSBackendDB;User Id=STS;Password=STELLANS$sd*1;Integrated Security=false; Encrypt=false"
+
+  }
+}

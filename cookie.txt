@@ -1,0 +1,79 @@
+1.create cookie set get class
+
+
+using Microsoft.AspNetCore.Http;
+using System;
+
+namespace Project_STSBackend.Helper
+{
+    public class SiteIds
+    {
+        public void SiteIdSet(int id, HttpResponse response)
+        {
+            CookieOptions option = new CookieOptions();
+            option.Expires = DateTime.Now.AddDays(365);
+            response.Cookies.Append("SiteId", id.ToString(), option);
+        }
+
+        public string SiteIdGet(HttpRequest request)
+        {
+            return request.Cookies["SiteId"];
+        }
+    }
+}
+
+
+2.then got to controller
+
+var siteIdString = _siteIds.SiteIdGet(Request);
+int siteid = Convert.ToInt32(siteIdString);
+
+and pass siteid in method[getid, delete, update, fetch] like ->  var Pages = _PageRepository.GetAllPages(siteid);
+								 return View(Pages);
+
+
+
+3. then got to repository and apply condition like ->  public List<PageModel> GetAllPages(int siteid)
+ 							{
+     								return _repository.table()
+						  		.Include(pc => pc.Tags)
+                       						.Where(a => a.SiteId == siteid)
+                       						.ToList();
+ 							}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ var siteIdString = _siteIds.SiteIdGet(Request);
+ int siteid = Convert.ToInt32(siteIdString);
+
+private readonly SiteIds _siteIds;
+
+&& pc.SiteId == siteid
+
+.Where(pc => pc.SiteId == siteid)
+
+int siteid
+
+
+ private string _siteIdString;
+ private int _siteid;
+
+
+
+ _siteIdString = _siteIds.SiteIdGet(Request);
+ _siteid = Convert.ToInt32(_siteIdString);

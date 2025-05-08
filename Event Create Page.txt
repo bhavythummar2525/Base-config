@@ -1,0 +1,181 @@
+@model Project_STSBackend.Helper.ViewModel.EventViewModel
+@using Project_STSBackend.Helper.Model
+<body>
+    <h1>Create</h1>
+    <br />
+    <form asp-action="CreateEvent" id="frmCreateEvent" method="post">
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.EventName, htmlAttributes: new { @class = "" })<span class="asterisk">*</span>
+                    @Html.EditorFor(m => m.EventName, new { htmlAttributes = new { @class = "form-control", @id = "EventName", placeholder = "Event Name" } })
+                    @Html.ValidationMessageFor(model => model.EventName, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.EventUrlText, htmlAttributes: new { @class = "" })<span class="asterisk"></span>
+                    @Html.EditorFor(m => m.EventUrlText, new { htmlAttributes = new { @class = "form-control", @id = "EventUrlText", placeholder = "EventUrlText" } })
+                    @Html.ValidationMessageFor(model => model.EventUrlText, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.EventAlterText, htmlAttributes: new { @class = "" })<span class="asterisk"></span>
+                    @Html.EditorFor(m => m.EventAlterText, new { htmlAttributes = new { @class = "form-control", @id = "EventAlterText", placeholder = "EventAlterText" } })
+                    @Html.ValidationMessageFor(model => model.EventAlterText, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.EventDisplayOrder, htmlAttributes: new { @class = "" })<span class="asterisk">*</span>
+                    @Html.EditorFor(m => m.EventDisplayOrder, new { htmlAttributes = new { @class = "form-control", @id = "EventDisplayOrder", placeholder = "EventDisplayOrder" } })
+                    @Html.ValidationMessageFor(model => model.EventDisplayOrder, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.EventDate, htmlAttributes: new { @class = "" })<span class="asterisk">*</span>
+                    @Html.EditorFor(m => m.EventDate, new { htmlAttributes = new { @class = "form-control", @id = "EventDate" } })
+                    @Html.ValidationMessageFor(model => model.EventDate, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label asp-for="EventStatus" class="control-label">Event Status</label><select asp-for="EventStatus" id="dropdownStatus" class="form-control" onchange="selectItem(this.value)" asp-items="@Html.GetEnumSelectList<EventStatusEnum>()">
+                        <option value="" selected disabled>-- Select Option --</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-group">
+                    @Html.LabelFor(model => model.EventCoverImageFile, htmlAttributes: new { @class = "" })<span class="asterisk">*</span>
+                    @Html.EditorFor(m => m.EventCoverImageFile, new { htmlAttributes = new { @class = "form-control", @id = "EventCoverImageFile", type = "file" } })
+                    @Html.ValidationMessageFor(model => model.EventCoverImageFile, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+        
+            <div class="" id="urml">
+                @Html.LabelFor(model => model.EventUrl, htmlAttributes: new { @class = "" })<span class="asterisk">*</span>
+                <div id="TagDataPanel" class="d-flex ml-25px">
+               
+                    <div class="col-md-11" style="padding-left:0px">
+                        <div class="form-group">
+                            @Html.EditorFor(m => m.EventUrl, new { htmlAttributes = new { @class = "form-control", @id = "EventUrl", placeholder = "EventUrl" } })
+                            @Html.ValidationMessageFor(model => model.EventUrl, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-1" style="margin-top:5px;">
+                        <div class="form-group">
+                            <a href="#" class="removeTagDataDetails text-danger">
+                                <i class="fa fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                
+            </div>
+        </div>
+      
+        <div class="col-sm-2">
+            <a href="@Url.Action("CreateEvent","Event")" class="fa fa-plus" id="addEventDataDetails"></a>
+        </div>
+        <div class="mt-3">
+            <div class="form-group">
+                <input type="submit" value="Create" id="SaveData" class="btn btn-success" />
+                <a href="@Url.Action("EventIndex","Event")" class="btn btn-secondary">Back to List</a>
+            </div>
+        </div>
+    </form>
+</body>
+
+<script>
+    function isCreateEventFormValid(formname) {
+        var isvalidate = $(formname).validate().form();
+        return isvalidate;
+    }
+
+    $(document).undelegate('#addEventDataDetails', "click").delegate("#addEventDataDetails", "click", function (e) {
+        e.preventDefault();
+
+        var url = $("#TagDataPanel").clone();
+        $(url).find("#EventUrl").val("");
+        url.appendTo("#urml");
+    });
+
+    // Use to Remove Multiple Tag Details...
+    $(document).undelegate('.removeTagDataDetails', "click").delegate(".removeTagDataDetails", "click", function (e) {
+        e.preventDefault();
+
+        if ($('#urml > #TagDataPanel').length > 1)
+            $(this).closest("#TagDataPanel").remove();
+    });
+    //----------------------------------------------------------------
+    $(document).undelegate('#SaveData', "click").delegate("#SaveData", "click", function (e) {
+        e.preventDefault();
+
+        var isformvalid = true;
+
+        var EventCoverImageFile = $("#EventCoverImageFile").val();
+        if (EventCoverImageFile.length == 0) {
+            alert("Please select a file");
+            isformvalid = false;
+            return false;
+        }
+
+        var EventStatus = $("#dropdownStatus").val(); // Corrected to use dropdownStatus
+        if (EventStatus == null || EventStatus.length == 0) {
+            alert("Please select an Event Status");
+            isformvalid = false;
+            return false;
+        }
+
+        $('#frmCreateEvent').each(function () {
+            if (!isCreateEventFormValid($(this))) {
+                isformvalid = false;
+            }
+        });
+
+        if (!isformvalid) {
+            return false;
+        }
+        
+        var values = [];
+        //$("#TagDataPanel").find("#eventUrl").each(function (index, element) {
+        $('#urml > #TagDataPanel').each(function (index, element) {
+            
+            var obj = $(this);
+            var url = obj.find("#EventUrl").val();
+            values.push(url);
+        });
+        var eventurl = values.join(",");
+        $("#EventUrl").val(eventurl);
+        var formdata = new FormData($('#frmCreateEvent')[0]);
+
+        $.ajax({
+            method: "POST",
+            url: "@Url.Action("CreateEvent", "Event")",
+            processData: false,
+            contentType: false,
+            data: formdata,
+            success: function (response) {
+                if (response.result == "Success") {
+                    alert(response.value);
+                    window.location.href = "@Url.Action("EventIndex", "Event")"; // Corrected redirect URL
+                } else {
+                    alert(response.value);
+                }
+            },
+            error: function (xhr, status, error) {
+                alert("Error: " + error); // Handle error
+            }
+        });
+    });
+</script>

@@ -1,0 +1,85 @@
+using Microsoft.EntityFrameworkCore;
+using Project_STSBackend.Data.Repositories;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Project_STSBackend.Data.Infrastructure
+{
+    public interface IRepository<T> where T : class
+    {
+        List<T> GetAll();
+        T Get(int id);
+        void Insert(T Entity);
+        void InsertAsync(T entity);
+        void Update(T Entity);
+        void Delete(T Entity);
+        IQueryable<T> table();
+    }
+    public class Repository<T> : IRepository<T> where T : class
+    {
+
+        private AppDbContext _dataContext;
+        private readonly DbSet<T> _dbSet;
+
+        protected IDatabaseFactory DatabaseFactory { get; }
+        protected AppDbContext DataContext => _dataContext ??= DatabaseFactory.Get();
+
+        private DbSet<T> dbset;
+        private readonly IUnitOfWork _unit;
+
+        public Repository(IDatabaseFactory databaseFactory)
+        {
+            DatabaseFactory = databaseFactory;
+            dbset = databaseFactory.Get().Set<T>();
+        }
+
+        public void Delete(T Entity)
+        {
+            if (Entity != null)
+            {
+                dbset.Remove(Entity);
+            }
+        }
+
+        public T Get(int id)
+        {
+            return dbset.Find(id);
+        }
+
+        public List<T> GetAll()
+        {
+            return dbset.ToList();
+        }
+
+        public async void Insert(T Entity)
+        {
+            if (Entity != null)
+            {
+                await dbset.AddAsync(Entity);
+            }
+        }
+
+
+        public IQueryable<T> table()
+        {
+            return dbset;
+        }
+
+        public void Update(T Entity)
+        {
+            if (Entity != null)
+            {
+                dbset.Update(Entity);
+            }
+        }
+
+        public async void InsertAsync(T entity)
+        {
+            await dbset.AddAsync(entity);
+            DataContext.Entry(entity).State = EntityState.Added;
+        }
+    }
+}

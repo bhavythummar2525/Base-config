@@ -1,0 +1,166 @@
+viewmodel
+ public virtual IEnumerable<DropDownCarrierViewModel> ProjectMasterCollection { get; set; }
+ 
+ 
+ /-------------------------------------------------------------------------------------------/
+ 
+ view 
+ 
+  @if (Model.CampaignTypeCollection != null)
+ {
+     @Html.DropDownListFor(m => m.CampaignTypeIDFK, new SelectList(Model.CampaignTypeCollections, "ID", "Name"), "Select", new { @class = "form-control select2", @id = "campaignType" })
+ }
+ else
+ {
+     @Html.DropDownListFor(m => m.CampaignTypeIDFK, Enumerable.Empty<SelectListItem>(), "Select", new { @class = "form-control", @id = "campaignType" })
+ }
+ 
+ $(document).undelegate('#ProjectDrp', "select2:open").delegate("#ProjectDrp", "select2:open", function () {
+    var id = $("#drpProjectId").val();
+    $.ajax({
+    url: '@Url.Action("ProjectDropdownById", "ProjectMaster")',
+    type: "GET",
+    async: false,
+    success: function (data) {
+        if (data.result == "Success") {
+            s = '<option value="">Select</option>'
+            for (var i = 0; i < data.value.length; i++) {
+                if (data.value[i].ID == id) {
+                    s += '<option selected=true value="' + data.value[i].ID + '">' + data.value[i].Name + '</option>';
+                }
+                else {
+                    s += '<option value="' + data.value[i].ID + '">' + data.value[i].Name + '</option>';
+                }
+            }
+            $('#ProjectDrp').empty();
+            $("#ProjectDrp").append(s);
+        }
+    }
+});
+});
+
+/-------------------------------------------------------------------------------------------/
+
+controller 
+		 public ActionResult PriorityDropdownById(int id = 0)
+ {
+     try
+     {
+         var result = RestClient.PriorityDropdownById(id);
+         if (result != null && result.Count() > 0)
+         {
+             return Json(new { result = "Success", value = result }, JsonRequestBehavior.AllowGet);
+         }
+         return Json(new { result = "Error", value = "" }, JsonRequestBehavior.AllowGet);
+     }
+     catch (UnauthorizedAccessException ex)
+     {
+         return Json(new { result = "Error", value = ex.Message }, JsonRequestBehavior.AllowGet);
+     }
+ }
+ 
+/-------------------------------------------------------------------------------------------/
+
+helper
+1 interface
+   IEnumerable<DropDownCarrierViewModel> PriorityDropdownById(int id);
+ 
+2helper
+public IEnumerable<DropDownCarrierViewModel> PriorityDropdownById(int id)
+{
+    var request = new RestRequest("Priority/PriorityDropdownById", Method.GET) { RequestFormat = DataFormat.Json };
+    if (CachedUserData != null)
+    {
+        if (!HasPermission(request.Resource))
+            throw new UnauthorizedAccessException("Access Denied");
+    }
+    if (id > 0)
+    {
+        request.AddHeader("id", id.ToString());
+    }
+    request.AddHeader(Constants.Constants.TokenKeyWord, userClient.getToken());
+    var response = _client.Execute<List<DropDownCarrierViewModel>>(request);
+
+    if (response.StatusCode.Equals(System.Net.HttpStatusCode.OK))
+    {
+        return (JsonConvert.DeserializeObject<List<DropDownCarrierViewModel>>(response.Content));
+    }
+
+    else if (response.StatusCode.Equals(System.Net.HttpStatusCode.NotFound))
+    { return null; }
+    else if (response.StatusCode.Equals(System.Net.HttpStatusCode.Unauthorized))
+    {
+        throw new UnauthorizedAccessException("Access Denied");
+    }
+    return null;
+}
+
+/-------------------------------------------------------------------------------------------/
+
+api controller
+
+ [HttpGet]
+ [Route("PriorityDropdownById")]
+ public IActionResult PriorityDropdownById()
+ {
+     var id = "0";
+     var authorizationHeaderid = Convert.ToString(HttpContext.Request.Headers["id"]);
+     if (!string.IsNullOrEmpty(authorizationHeaderid))
+     {
+         id = authorizationHeaderid;
+     }
+     IEnumerable<DropDownCarrierViewModel> dropdowncarrierpriorityviewmodel;
+     IEnumerable<DropDownCarrierModel> dropdowncarrierprioritymodel;
+
+     dropdowncarrierprioritymodel = priorityService.PriorityDropdownById(id.ToInt32());
+     dropdowncarrierpriorityviewmodel = _mapper.Map<IEnumerable<DropDownCarrierModel>, IEnumerable<DropDownCarrierViewModel>>(dropdowncarrierprioritymodel);
+
+     if (dropdowncarrierpriorityviewmodel != null)
+     {
+         if (dropdowncarrierpriorityviewmodel.Any())
+             return Ok(dropdowncarrierpriorityviewmodel);
+     }
+     return NotFound();
+ }
+ 
+/-------------------------------------------------------------------------------------------/
+
+service 
+1 interface
+IEnumerable<DropDownCarrierModel> PriorityDropdownById(int id);
+2 service
+public IEnumerable<DropDownCarrierModel> PriorityDropdownById(int id)
+{
+    return priorityRepository.PriorityDropdownById(id);
+}
+
+/-------------------------------------------------------------------------------------------/
+
+repo
+1 interface 
+IEnumerable<DropDownCarrierModel> PriorityDropdownById(int id);
+
+2 repo
+ public IEnumerable<DropDownCarrierModel> PriorityDropdownById(int id)
+ {
+     var idnameList = new List<DropDownCarrierModel>();
+     try
+     {
+         var setquery = string.Empty;
+         if (id > 0)
+         {
+             setquery = @"select PriorityID As ID , PriorityName as Name from IPM_Mrktg_Priority with (NOLOCK) where IPM_Mrktg_PriorityDeleted='N' And PriorityID = " + id + "";
+         }
+         else
+         {
+             setquery = @"select PriorityID As ID , PriorityName as Name from IPM_Mrktg_Priority with (NOLOCK) where IPM_Mrktg_PriorityDeleted='N'";
+         }
+         return idnameList = base.SqlQuery<DropDownCarrierModel>(setquery).ToList();
+
+     }
+     catch (Exception ex)
+     {
+     }
+     return idnameList;
+ }
+

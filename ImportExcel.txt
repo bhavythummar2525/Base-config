@@ -1,0 +1,188 @@
+Controller
+
+ [HttpPost]
+ [AuthorizeAdminUser(permissions: new[] { CandidatePermission.Create })]
+ public async Task<IActionResult> ImportCandidate(IFormFile postedFile)
+ {
+     try
+     {
+         if (postedFile != null && postedFile.Length > 0)
+         {
+             string fileExtension = Path.GetExtension(postedFile.FileName);
+             if (fileExtension != ".xls" && fileExtension != ".xlsx")
+             {
+                 return Json(new { result = "Error", value = "Invalid file format. Only .xls and .xlsx files are allowed." });
+             }
+
+             var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Resume", postedFile.FileName);
+             using (var stream = new FileStream(filePath, FileMode.Create))
+             {
+                 await postedFile.CopyToAsync(stream);
+             }
+
+             var candidateData = _candidateRepository.Readxlsfile(filePath);
+
+             if (candidateData != null)
+             {
+                 var candidateViewmodel = UtilityHelper.ConvertToModelList<CandidateViewModel>(candidateData.Tables[0]);
+
+                 if (candidateViewmodel.Any())
+                 {
+                     foreach (var item in candidateViewmodel)
+                     {
+                         if (item.CandidateFirstName != null
+                             && item.CandidateLastName != null 
+                             && item.CandidateEmail != null 
+                             && item.CandidateContactNumber != null
+                             && item.CandidateContactNumber.All(char.IsDigit) 
+                             && item.CandidateContactNumber.Length >= 10
+                             && item.PositionName != null
+                             && item.ExperienceYears > 0 
+                             && item.CurrentCTC >= 0 
+                             && item.ExpectedCTC > 0 
+                             && item.Resume != null 
+                             && item.NoticePeriod != null)
+                         {
+                             var position = _positionRepository.AsNoTracking.Where(x => x.Position == item.PositionName).First();
+
+                             if (position != null && position.PositionId > 0)
+                             {
+                                 string fileExtensions = Path.GetExtension(item.Resume);
+                                 string newFileName = StringExtensions.GenerateFileName();
+                                 string fullPath = newFileName + fileExtensions;
+                                 string folder = "Resume/";
+                                 string fileUrl;
+
+                                 using (var stream = new FileStream(item.Resume, FileMode.Create))
+                                 {
+                                     fileUrl = _s3Helper.Upload(stream, fullPath, folder);
+                                 }
+
+                                 if (!string.IsNullOrEmpty(fileUrl))
+                                 {
+                                     if (!_IsAwsStorage)
+                                     {
+                                         fileUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/Resume/{fileUrl}";
+                                     }
+
+                                     item.ApplyDate = DateTime.Now;
+                                     item.CreatedDate = DateTime.Now;
+                                     item.CreatedBy = loginUserId;
+                                     item.SiteId = siteid;
+
+                                     var candidate = _mapper.Map<CandidateModel>(item);
+                                     candidate.PositionId = position.PositionId;
+                                     candidate.AsOnDateExperience = item.ExperienceYears;
+
+                                     _candidateRepository.Insert(candidate);
+                                     await _unitOfWork.CommitAsync();
+
+                                     FollowUpViewModel followupviewmodel = new FollowUpViewModel();
+
+                                     followupviewmodel.CreatedBy = loginUserId;
+                                     followupviewmodel.CreatedDate = DateTime.Now;
+                                     followupviewmodel.SiteId = siteid;
+                                     followupviewmodel.CandidateIdFK = candidate.CandidateId;
+                                     followupviewmodel.Status = StatusEnum.Applied;
+
+                                     var followupmodel = _mapper.Map<FollowUpModel>(followupviewmodel);
+
+                                     _followUpRepository.Insert(followupmodel);
+                                     await _unitOfWork.CommitAsync();
+                                 }
+                             }
+                         }
+                     }
+                     return Json(new { result = "Success", value = "Candidates Imported Successfully." });
+                 }
+             }
+             else
+             {
+                 return Json(new { result = "Error", value = "No valid data found in the provided file." });
+             }
+         }
+         return Json(new { result = "Error", value = "File is empty." });
+     }
+     catch (Exception ex)
+     {
+         return Json(new { result = "Error", value = "An error occurred while importing candidates: " + ex.Message });
+     }
+ }
+---------------------------------------------------------------------------------------
+
+
+
+UtilityHelper
+
+using System.Data;
+
+namespace Project_STSBackend.Helper.Helper
+{
+    public class UtilityHelper
+    {
+        public static List<T> ConvertToModelList<T>(DataTable table) where T : new()
+        {
+            List<T> modelList = new List<T>();
+
+            var properties = typeof(T).GetProperties();
+            foreach (DataRow row in table.Rows)
+            {
+                T model = new T();
+
+                foreach (var property in properties)
+                {
+                    if (table.Columns.Contains(property.Name))
+                    {
+                        property.SetValue(model, Convert.ChangeType(row[property.Name], property.PropertyType));
+                    }
+                }
+                modelList.Add(model);
+            }
+
+            return modelList;
+        }
+    }
+}
+
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+
+repository
+
+
+  public DataSet Readxlsfile(string filepath)
+  {
+      DataSet ds = new DataSet();
+      try
+      {
+          if (!string.IsNullOrEmpty(filepath))
+          {
+              Stream fileStream = File.OpenRead(filepath);
+              if (fileStream.Length > 0)
+              {
+                  using (var reader = ExcelReaderFactory.CreateReader(fileStream))
+                  {
+                      ds = reader.AsDataSet(new ExcelDataSetConfiguration()
+                      {
+                          ConfigureDataTable = (tableReader) => new ExcelDataTableConfiguration()
+                          {
+                              UseHeaderRow = true,
+                              FilterRow = (rowReader) =>
+                              {
+                                  return true;
+                              },
+                          }
+                      });
+                  }
+              }
+          }
+
+          return ds;
+      }
+      catch (Exception ex)
+      {
+          return null;
+      }
+  }

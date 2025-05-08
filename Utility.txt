@@ -1,0 +1,247 @@
+
+<!-- Container for upload form -->
+<div class="upload-container">
+    <div class="upload-card">
+        <h2>Select Files to Upload</h2>
+
+        <form enctype="multipart/form-data" id="Filefrm">
+            <!-- Drag-and-drop or click-to-select area -->
+            <div class="upload-area" id="uploadArea">
+                <input type="file" class="file-input" id="File" multiple />
+                <label for="File" class="file-label">
+                    Drag & Drop Files Here or Click to Select
+                </label>
+            </div>
+
+            <div class="upload-btn-wrapper">
+                <button type="button" class="upload-btn" id="importFile">Start Upload</button>
+            </div>
+
+            <div class="progress-container">
+                <progress id="progressBar" value="0" max="100"></progress>
+                <div class="status" id="status"></div>
+            </div>
+
+            <div id="fileDiv" class="file-path-container" style="display:none">
+                <h3><u>Uploaded Files</u></h3>
+                <div id="pathDiv"></div>
+
+                <!-- Copy Button -->
+                <button type="button" class="copy-btn" id="copyButton">Copy Links</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Add jQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script>
+    var counter = 0;
+
+    $(document).on("click", "#importFile", function (e) {
+        e.preventDefault();
+
+        var data = new FormData();
+        var files = $("#File")[0].files;
+
+        for (var i = 0; i < files.length; i++) {
+            data.append("files", files[i]);
+        }
+
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("POST", "@Url.Action("UploadFiles", "BulkFileStore")", true);
+
+        // Add progress handlers
+        xhttp.upload.addEventListener("progress", progressHandler);
+        xhttp.addEventListener("load", completeHandler);
+        xhttp.addEventListener("error", errorHandler);
+        xhttp.addEventListener("abort", abortHandler);
+
+        xhttp.send(data);
+
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                counter++;
+                $("#fileDiv").show(); 
+                $("#pathDiv").append(`<div>${this.responseText}</div>`);
+                $("#status").text("Uploaded " + counter + " file(s) successfully!");
+            }
+        };
+    });
+
+    function progressHandler(event) {
+        var percent = (event.loaded / event.total) * 100;
+        $("#progressBar").val(Math.round(percent));
+        $("#status").text(Math.round(percent) + "% uploaded... please wait");
+    }
+
+    function completeHandler(event) {
+        $("#status").text("Upload Complete!");
+    }
+
+    function errorHandler(event) {
+        $("#status").text("Upload Failed");
+    }
+
+    function abortHandler(event) {
+        $("#status").text("Upload Aborted");
+    }
+
+    $(document).on('click', '#copyButton', function () {
+        var fileLinks = [];
+
+        $("#pathDiv div").each(function () {
+            fileLinks.push($(this).text()); 
+        });
+
+        var linksCommaSeparated = fileLinks.join(", ");
+
+        var tempTextArea = $("<textarea>").val(linksCommaSeparated).appendTo("body");
+        tempTextArea.select();
+        document.execCommand("copy"); 
+        tempTextArea.remove(); 
+
+        alert("File links copied to clipboard!");
+    });
+</script>
+
+<!-- Custom Styles for the Upload Form -->
+<style>
+    /* Main container for the upload form */
+    .upload-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f5f5f5;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .upload-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        width: 100%;
+        max-width: 650px;
+        text-align: center;
+    }
+
+        .upload-card h2 {
+            font-size: 26px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+    /* Drag and drop or click-to-select area */
+    .upload-area {
+        position: relative;
+        border: 2px dashed #4CAF50;
+        padding: 50px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        background-color: #fafafa;
+        transition: background-color 0.3s ease;
+    }
+
+    .file-input {
+        display: none;
+    }
+
+    .file-label {
+        display: block;
+        background-color: #4CAF50;
+        color: #ffffff;
+        padding: 18px;
+        font-size: 20px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+        .file-label:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+    /* Upload button */
+    .upload-btn-wrapper {
+        margin-top: 30px;
+    }
+
+    .upload-btn {
+        background-color: #4CAF50;
+        color: white;
+        padding: 14px 35px;
+        border: none;
+        border-radius: 12px;
+        font-size: 20px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+        .upload-btn:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+    /* Progress bar */
+    .progress-container {
+        margin-top: 30px;
+    }
+
+    progress {
+        width: 100%;
+        height: 20px;
+        border-radius: 8px;
+    }
+
+    .status {
+        margin-top: 15px;
+        font-size: 18px;
+        color: #4CAF50;
+        font-weight: 500;
+    }
+
+    /* File paths after upload */
+    .file-path-container {
+        margin-top: 40px;
+        background-color: #f8f8f8;
+        padding: 25px;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        display: none;
+    }
+
+        .file-path-container u {
+            font-weight: bold;
+            font-size: 22px;
+            color: #333;
+        }
+
+    #pathDiv {
+        margin-top: 15px;
+        font-size: 18px;
+        color: #555;
+        line-height: 1.6;
+    }
+
+    /* Copy Button */
+    .copy-btn {
+        background-color: #2196F3;
+        color: white;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: background-color 0.3s ease;
+    }
+
+        .copy-btn:hover {
+            background-color: #1976D2;
+        }
+</style>

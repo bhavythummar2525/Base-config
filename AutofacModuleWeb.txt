@@ -1,0 +1,51 @@
+
+
+using Autofac;
+using Project_STSBackend.Data.Auth;
+using Project_STSBackend.Data.Infrastructure;
+using Project_STSBackend.Data.Repositories;
+using System.Reflection;
+using Module = Autofac.Module;
+
+namespace Project_STSBackend.AutofacWeb
+{
+    public class AutofacModuleWeb : Module
+    {
+        protected override void Load(ContainerBuilder builder)
+        {
+            var webAssembly = Assembly.GetExecutingAssembly();
+
+            //builder.Register<ServiceFactory>(context =>
+            //{
+            //    var c = context.Resolve<IComponentContext>();
+            //    return t => c.Resolve(t);
+            //});
+
+            builder.RegisterAssemblyTypes(typeof(UserRepository).Assembly)
+            .Where(t => t.Name.EndsWith("Repository"))
+            .AsImplementedInterfaces().InstancePerLifetimeScope();
+
+            builder.RegisterType<DatabaseFactory>().As<IDatabaseFactory>().InstancePerLifetimeScope();
+            builder.RegisterType<UnitOfWork>().As<IUnitOfWork>().InstancePerLifetimeScope();
+            builder.RegisterType<NestedSet>().As<INestedSet>().InstancePerLifetimeScope();
+            builder.RegisterType<HttpContextAccessor>().As<IHttpContextAccessor>();
+
+            builder.RegisterType<AuthHelper>();
+        }
+    }
+}
+
+
+program.cs
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), b => b.MigrationsAssembly("Project_STSBackend.Data")), ServiceLifetime.Transient);
+
+builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory(containerBuilder =>
+{
+    containerBuilder.RegisterModule(new AutofacModuleWeb());
+}));
+
+builder.Services.AddAutoMapper(typeof(UserModel));
+
+builder.Services.AddHttpContextAccessor();

@@ -1,0 +1,13 @@
+using Project_STSBackend.Data.Infrastructure;
+using Project_STSBackend.Data.Repositories.Interfaces;
+using Project_STSBackend.Helper.Model;
+
+namespace Project_STSBackend.Data.Repositories
+{
+    public class ContactUsRepository : Repository<ContactUsModel>, IContactUsRepository
+    {
+        public ContactUsRepository(IDatabaseFactory databaseFactory) : base(databaseFactory)
+        {
+        }
+    }
+}

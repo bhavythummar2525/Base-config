@@ -1,0 +1,32 @@
+<a href="#" class="create btn btn-sm btn-info" data-toggle="collapse" data-target="#accounttype-advance-search" title="Advanced Search"><i class="fa fa-search" aria-hidden="true"></i>&nbsp;Advanced Search</a>
+
+
+
+
+
+
+==================================
+
+
+  <div class="panel-group">
+      <div class="collapse" id="accounttype-advance-search">
+          <div class="panel panel-default">
+              <div class="box box-primary with-border">
+                  <div class="box-header">
+                      <h3 class="box-title text-on-panel">Advanced Search</h3>
+                  </div>
+                  <div id="pnl-roleactionmappinginfo-info" class="">
+                      <div class="panel-body">
+                          <div class="row">
+                              <div class="col-md-2">
+                                  <label>@Html.DisplayNameFor(model => model.RoleName)</label>
+                                  @Html.DropDownList("Role", Enumerable.Empty<SelectListItem>(), "Select Role", new { @class = "form-control column-drpsearch select2", @id = "AdvRole" })
+                              </div>
+                          </div>
+                      </div>
+
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>

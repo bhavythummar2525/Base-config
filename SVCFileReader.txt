@@ -1,0 +1,174 @@
+Repository
+
+ public IEnumerable<CandidateImportedFileInfoModel> GetPendingImportFiles()
+ {
+     return base.AsNoTracking.Where(x => x.ImportFileStatus == ImportStatusEnum.Pending).ToList();
+ }
+
+-------------------------------------------------------------------------
+public IEnumerable<CandidateImportedFileDataInfoViewModel> ReadCsvFile(FileStream buffer)
+{
+    try
+    {
+        var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+        {
+            HeaderValidated = null,
+            MissingFieldFound = null,
+        };
+
+        using (StreamReader stream = new StreamReader(buffer))
+        {
+            using (var csv = new CsvReader(stream, config))
+            {
+                var records = csv.GetRecords<CandidateImportedFileDataInfoViewModel>();
+                return records.ToList();
+            }
+        }
+        return null;
+    }
+    catch (Exception)
+    {
+        return null;
+    }
+}
+   
+-----------------------------------------------------------------------------------------------------------------------------------------------
+
+Controller
+
+public async Task<IActionResult> ReadImportDataFile()
+{
+    var entity = _candidateImportedFileInfoRepository.GetPendingImportFiles();
+    string folder = "CandidateImport/";
+    if (entity.Count() > 0)
+    {
+        foreach (var items in entity)
+        {
+            string uploadsFolder = Path.Combine(webHostEnvironment.WebRootPath, folder);
+
+            Uri uri = new Uri(items.FileName);
+            string fileName = System.IO.Path.GetFileName(uri.LocalPath);
+            string filePath = Path.Combine(uploadsFolder, fileName);
+
+            FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+
+            var candidateData = _candidateImportedFileDataInfoRepository.ReadCsvFile(fileStream);
+            if (candidateData != null && candidateData.Count() > 0)
+            {
+                foreach (var candidateItems in candidateData)
+                {
+                    string errorMessage = string.Empty;
+                    candidateItems.Status = ImportStatusEnum.Completed;
+                    if (candidateItems == null)
+                    {
+                        errorMessage = "Candidate data is missing.";
+                    }
+                    //CandidateFirstName
+                    if (string.IsNullOrWhiteSpace(candidateItems.CandidateFirstName))
+                    {
+                        errorMessage += "First Name is missing. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+                    if (candidateItems.CandidateFirstName != null && !Regex.IsMatch(candidateItems.CandidateFirstName, @"^[A-Z][a-zA-Z]{2,}$"))
+                    {
+                        errorMessage += "First Name is invalid. It should start with a capital letter and have at least 2 characters. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+
+                    //CandidateLastName
+                    if (string.IsNullOrWhiteSpace(candidateItems.CandidateLastName))
+                    {
+                        errorMessage += "Last Name is missing. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+                    if (candidateItems.CandidateLastName != null && !Regex.IsMatch(candidateItems.CandidateLastName, @"^[A-Z][a-zA-Z]{2,}$"))
+                    {
+                        errorMessage += "Last Name is invalid. It should start with a capital letter and have at least 2 characters. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+
+                    //Resume
+                    if (string.IsNullOrWhiteSpace(candidateItems.Resume))
+                    {
+                        errorMessage += "Resume is missing. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+                    if (candidateItems.Resume != null && !Uri.IsWellFormedUriString(candidateItems.Resume, UriKind.Absolute))
+                    {
+                        errorMessage += "Resume URL is invalid. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+
+                    //CandidateContactNumber
+                    if (string.IsNullOrWhiteSpace(candidateItems.CandidateContactNumber))
+                    {
+                        errorMessage += "Contact Number is missing. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+                    if (candidateItems.CandidateContactNumber != null && !Regex.IsMatch(candidateItems.CandidateContactNumber, @"^[0-9]{10}$"))
+                    {
+                        errorMessage += "Contact Number should be 10 digits long. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+
+                    //ExperienceYears
+                    if (candidateItems.ExperienceYears < 0)
+                    {
+                        errorMessage += "Experience is missing or invalid. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+                    if (!Regex.IsMatch(candidateItems.ExperienceYears.ToString(), @"^([0-9]{1,2})(\.(?:0?[1-9]|1[0-2]))?$"))
+                    {
+                        errorMessage += "Experience is invalid. It should be a valid number or decimal. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+
+                    //CurrentCTC
+                    if (string.IsNullOrWhiteSpace(candidateItems.CurrentCTC))
+                    {
+                        errorMessage += "Current CTC is missing. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+                    if (candidateItems.CurrentCTC != null && !Regex.IsMatch(candidateItems.CurrentCTC, @"^[0-9]{1,8}$"))
+                    {
+                        errorMessage += "Current CTC should be a valid number. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+
+                    //ExpectedCTC
+                    if (string.IsNullOrWhiteSpace(candidateItems.ExpectedCTC))
+                    {
+                        errorMessage += "Expected CTC is missing. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+                    if (candidateItems.ExpectedCTC != null && !Regex.IsMatch(candidateItems.ExpectedCTC, @"^[0-9]{4,8}$"))
+                    {
+                        errorMessage += "Expected CTC should be a valid number. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+
+                    //NoticePeriod
+                    if (string.IsNullOrWhiteSpace(candidateItems.NoticePeriod))
+                    {
+                        errorMessage += "Notice Period is missing. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+                    if (candidateItems.NoticePeriod != null && !Regex.IsMatch(candidateItems.NoticePeriod, @"^[0-9]{1,2}$"))
+                    {
+                        errorMessage += "Notice Period should be a valid number. ";
+                        candidateItems.Status = ImportStatusEnum.CompletedwithError;
+                    }
+
+                    candidateItems.Error = errorMessage;
+                    candidateItems.ImportedFileId = items.Id;
+                    candidateItems.CreatedBy = loginUserId;
+
+                    var modelData = _mapper.Map<CandidateImportedFileDataInfoModel>(candidateItems);
+                    _candidateImportedFileDataInfoRepository.Insert(modelData);
+                }
+                await _unitOfWork.CommitAsync();
+            }
+        }
+    }
+    return null;
+}

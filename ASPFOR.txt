@@ -1,0 +1,183 @@
+
+------------------------------TextBox---------------------------------------
+
+                                    @Html.LabelFor(model => model.CategoryName, htmlAttributes: new { @class = "" })<span class="asterisk"></span>
+                                    @Html.EditorFor(m => m.CategoryName, new { htmlAttributes = new { @class = "form-control", @id = "CategoryName", placeholder = "Category Name" } })
+                                    @Html.ValidationMessageFor(model => model.CategoryName, "", new { @class = "text-danger" })
+                                   
+---------------------------------ViewBag dropDown---------------------------------------
+
+
+
+@Html.DropDownListFor(m => m.CompanyId,(List<SelectListItem>)ViewBag.CompanyList,"Select",new { htmlAttributes = new { @class = "form-control select2", @id = "CompanyId", @name="CompanyId"} })
+
+---------------------Dropdown Listmodel-------------------------------------------------
+
+
+                                    @Html.LabelFor(model => model.Level, htmlAttributes: new { @class = "" })<span class="asterisk"></span><br />
+                                    @Html.DropDownListFor(m => m.Level, new SelectList(Model.LevelList, "Id", "Name"), "Select", new { htmlAttributes = new { @class = "form-control select2" }, @id = "Level" })
+                                    @Html.ValidationMessageFor(model => model.Level, "", new { @class = "text-danger" })
+  
+---------------------------button  or link---------------------
+
+
+
+ <a href="@Url.Action("Index","CategoryMaster")" class="btn btn-primary mb-2  btn-sm" data-toggle="tooltip" data-placement="right" title="Back to Category List">Go to List of Category</a>
+
+------------------------------Hiddan----------------------------------------------------
+
+
+
+@Html.HiddenFor(model => model.Id)                        
+@Html.HiddenFor(model => model.CreatedBy)
+@Html.HiddenFor(model => model.CreatedAt)
+@Html.HiddenFor(model => model.IsActive)
+
+
+----
+ 
+ <a href="@Url.Action("Index","CategoryMaster")" class="btn btn-primary mb-2  btn-sm" data-toggle="tooltip" data-placement="right" title="Back to Category List">Go to List of Category</a>
+
+--------------------ButtonCode_____
+
+
+Button code-----
+
+<input type="button" value="Create" id="SaveTagData" class="btn btn-success" />
+<a href="@Url.Action("Index","YourControllerName")" class="btn btn-secondary">Back to List</a>
+
+----------------Chekbox------------
+
+checkbox code------
+
+<label class="control-label">Is Page</label>
+@Html.CheckBoxFor(m => m.IsPage, new { id = "IsPage" })
+
+
+
+
+-----------------
+
+- example for :-  ViewBag dropdown.
+
+<div class="col-sm-3">
+    <label>Feedback Status</label><span class="asterisk">*</span>
+    @if (ViewBag.FeedbackStatusList != null)
+    {
+        @Html.DropDownList("clientFeedbackStatus", new SelectList(ViewBag.FeedbackStatusList, "Id", "Name"), "Select", new { htmlAttributes = new { @class = "form-control select2" }, @id = "clientFeedbackStatus" })
+    }
+    else
+    {
+        @Html.DropDownList("clientFeedbackStatus", Enumerable.Empty<SelectListItem>(), new { @class = "form-control select2", id = "clientFeedbackStatus" })
+    }
+</div>
+
+A___________________________________________________________________________
+
+DropDown ---View
+  <label class="control-label">Block Parent</label>
+
+ @if (ViewBag.DrpBlocksList != null)
+ {
+     @Html.DropDownListFor(m => m.BlockParentId, (List<SelectListItem>)ViewBag.DrpBlocksList, "Select", new { htmlAttributes = new { @class = "form-control select2", @id = "BlockParentId", @name = "BlockParentId" } })
+ }
+ else
+ {
+     @Html.DropDownListFor(m => m.BlockParentId, Enumerable.Empty<SelectListItem>(), new { @class = "form-control select2", id = "BlockParentId" })
+ }
+
+---------------------------------------------------------------------------
+DropDown Controller
+
+public IActionResult CreateBlock()
+{
+	var blocks = _blockRepository.GetAll();
+	var Block= new List<SelectListItem>();
+    if (blocks != null && blocks.Count() > 0)
+	{
+        Block = blocks.Select(item => new SelectListItem { Text = item.BlockNLevelstring, Value = item.BlockId.ToString() }).ToList();
+	}
+
+    ViewBag.blockslist = Block;
+
+    
+	return View();
+}
+------------------------------------
+validaion Createview added
+
+ @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+------------------------------------------
+model
+ [DisplayName("Position")]
+ [Required(ErrorMessage = "Position is Required")]
+
+-----------------------------------------
+ctr
+Actionmethod
+ if (ModelState.IsValid)
+ {
+ }
+return view
+}
+----------------------------------------
+var result = await base.Table.Include(c => c.Positions).Include(f => f.FollowUps).Where(pc => pc.SiteId == siteid)
+    .Select(x => new CandidateListModel
+    {
+        CandidateId = x.CandidateId,
+        CandidateFirstName = x.CandidateFirstName,
+        CandidateLastName = x.CandidateLastName,
+        PositionId = x.PositionId,
+        PositionName = x.Positions.Position,
+        ApplyDate = x.ApplyDate,
+       
+    }).ToListAsync();
+
+-------------------------------------
+
+   how to get ckeditor value in form data  
+
+ $(document).undelegate('#SaveData', "click").delegate("#SaveData", "click", function (e) {
+     e.preventDefault();
+     debugger;
+     var isformvalid = true;
+     $('#frmCreateJob').each(function () {
+         if (!isCreateJobFormValid($(this))) {
+             isformvalid = false;
+         }
+     });
+
+     if (!isformvalid) {
+         return false;
+     }
+     
+     var formdata = new FormData($('#frmCreateJob')[0]);
+     formdata.append($(this).attr("name"), $(this).attr("name"));
+    
+     formdata.append('LongDescription', CKEDITOR.instances['LongDescription'].getData());
+     formdata.append('Responsibilities', CKEDITOR.instances['Responsibilities'].getData());
+     formdata.append('Qualifications', CKEDITOR.instances['Qualifications'].getData());
+
+     $.ajax({
+         method: "POST",
+         url: "@Url.Action("CreateJob", "Job")",
+         processData: false,
+         contentType: false,
+         data: formdata,
+         success: function (response) {
+             if (response.result == "Success") {
+                 alert(response.value);
+                 window.location.href = "JobIndex";
+             }
+         }
+     });
+ });
+ function isCreateJobFormValid(formname) {
+     var isvalidate = $(formname).validate().form();
+     if (isvalidate) {
+         return true;
+     }
+     return false;
+ }
+-----------------------------
+disabled = "disabled"

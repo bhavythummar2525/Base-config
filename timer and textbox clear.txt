@@ -1,0 +1,23 @@
+ if (!string.IsNullOrEmpty(result))
+ {
+     lblerror.Text = "<div class=\"contex-bg text-center\"><p class=\"bg-success rounded-2x \"><i Class=\"fa fa-check color-green\"></i>Thank you, for connecting STS, We will catch you soon !</p></div>";
+     lblerror.Visible = true;
+     obj.ClearTextBoxes(panel);
+     Response.AddHeader("Refresh", "5");
+ }
+ else
+ {
+     lblerror.Text = "<div class=\"alert alert-danger\">Invalid Data</p></div>";
+     lblerror.Visible = true;
+     Response.AddHeader("Refresh", "5");
+ }
+
+
+public void ClearTextBoxes(Control ctrl)
+{
+    foreach (Control c in ctrl.Controls)
+    {
+        if (c is TextBox)
+            ((TextBox)c).Text = "";
+    }
+}

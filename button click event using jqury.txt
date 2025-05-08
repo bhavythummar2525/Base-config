@@ -1,0 +1,93 @@
+
+1. addview.cshtml
+
+@model CRUD.Models.CityModel;
+
+<html>
+    <head>
+        <title>City Information</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    </head>
+    <body>
+        <form asp-action="AddCity" method="post" id="frmcity">
+
+        <h2>
+            Add New City
+        </h2>
+
+
+        <div class="form-group mb-2">
+            <label asp-for="Name" class="control-label">Add Name</label>
+            <input asp-for="Name" type="text" id="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-2">
+            <input type="button" id="citysub" value="Add Now" class="btn btn-primary" /> ||
+            <a asp-action="CityIndex" class="btn btn-secondary">Back to List</a>
+        </div>
+
+
+        </form>
+    </body>
+</html>
+
+<script>
+
+    $("#citysub").click(function () {
+
+        var formdata = new FormData($('#frmcity')[0]);
+        formdata.append($(this).attr("name"), $(this).attr("name"));
+        console.log(formdata);
+
+        $.ajax({
+            method: "POST",
+            url: "@Url.Action("AddCity", "City")",
+            processData: false,
+            contentType: false,
+            data: formdata,
+            success: function (response) {
+                if (response.result == "Success") {
+                    alert(response.value);
+                    window.location.href = "/City/CityIndex";
+                }
+            }
+        });
+    });
+
+</script>
+
+//#citysub -> button id
+//#frmcity -> form id
+//AddCity -> method name
+//City -> controller name
+
+
+
+
+2. controller.cs
+
+
+ [HttpPost]
+ public async Task<IActionResult> AddCity([FromForm] CityModel citymd)
+ {
+     try
+     {
+         if (citymd != null)
+         {
+             var citys = new CityModel
+             {
+                 Name = citymd.Name
+             };
+
+             await _cityrepository.AddCitys(citys);
+
+             return Json(new { result = "Success", value = "Add City Successfully." });
+         }
+         return Json(new { result = "Error", value = "Error in City." });
+     }
+     catch
+     {
+         return Json(new { result = "Error", value = "Error in City." });
+     }
+ }

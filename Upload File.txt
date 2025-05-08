@@ -1,0 +1,63 @@
+private string UploadedFile(DocumentViewModel model)
+{
+    string uniqueFileName = null;
+
+    if (model.DocumentFile != null)
+    {
+        string uploadsFolder = Path.Combine(webHostEnvironment.WebRootPath, "Uploaded_Documents");
+
+        if (!Directory.Exists(uploadsFolder))
+        {
+            Directory.CreateDirectory(uploadsFolder);
+        }
+
+        uniqueFileName = Guid.NewGuid().ToString() + "_" + model.DocumentFile.FileName;
+        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+        using (var fileStream = new FileStream(filePath, FileMode.Create))
+        {
+            model.DocumentFile.CopyTo(fileStream);
+        }
+    }
+    return uniqueFileName;
+}
+
+
+
+
+
+ public string Document { get; set; }
+public IFormFile DocumentFile { get; set; } 
+
+
+
+string uniqueFileName = UploadedFile(documentviewModel);
+string fileUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/Uploaded_Documents/{uniqueFileName}";
+
+
+
+Edit
+
+ if (viewModel.DocumentFile != null && viewModel.DocumentFile.Length > 0)
+ {
+     if (!string.IsNullOrEmpty(existingDocument.Path) && System.IO.File.Exists(webHostEnvironment.WebRootPath + existingDocument.Path.Replace("/", "\\")))
+     {
+         System.IO.File.Delete(webHostEnvironment.WebRootPath + existingDocument.Path.Replace("/", "\\"));
+     }
+
+     string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(viewModel.DocumentFile.FileName);
+     string uploadsFolder = Path.Combine(webHostEnvironment.WebRootPath, "Uploaded_Documents");
+     string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+     using (var fileStream = new FileStream(filePath, FileMode.Create))
+     {
+         await viewModel.DocumentFile.CopyToAsync(fileStream);
+     }
+
+     string fileUrl = $"{Request.Scheme}://{Request.Host}{Request.PathBase}/Uploaded_Documents/{uniqueFileName}";
+
+     existingDocument.Document = Path.GetFileNameWithoutExtension(viewModel.DocumentFile.FileName);
+     existingDocument.Extension = Path.GetExtension(viewModel.DocumentFile.FileName);
+     existingDocument.Path = fileUrl;
+ }
+
+
+private readonly IWebHostEnvironment webHostEnvironment;

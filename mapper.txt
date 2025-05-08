@@ -1,0 +1,22 @@
+using AutoMapper;
+using Project_STSBackend.Helper.Model;
+using Project_STSBackend.Helper.ViewModel;
+
+namespace Project_STSBackend.Helper.Mapper
+{
+    public class FollowUpMapper : Profile
+	{
+		public FollowUpMapper()
+		{
+			CreateMap<FollowUpModel, FollowUpViewModel>().ReverseMap();
+
+			//CreateMap<PageContentModel, PageContentViewModel>()
+        		//.ForMember(dest => dest.TagData, opt => opt.MapFrom(src => src.Tags))
+        		//.ForMember(dest => dest.Documents, opt => opt.MapFrom(src => src.Document));
+
+			//CreateMap<PageContentViewModel, PageContentModel>()
+			//.ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.TagData));
+
+		}
+	}
+}
