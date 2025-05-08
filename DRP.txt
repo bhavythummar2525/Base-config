@@ -163,4 +163,11 @@ IEnumerable<DropDownCarrierModel> PriorityDropdownById(int id);
      }
      return idnameList;
  }
+------------------------------------------------------------------------------------------------------------------
+$("#myDropdown option:contains('Select')").prop('selected', true);
 
+$('.inner_Checkbox').prop('checked', true);
+
+ $('.checkbox').attr('checked',true);
+
+$('#TaskStatus').select2('destroy').select2()
